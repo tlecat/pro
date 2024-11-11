@@ -53,7 +53,7 @@ $resultUsers = mysqli_query($conn, $queryUsers);
 $rowUsers = mysqli_fetch_assoc($resultUsers);
 $totalUsers = $rowUsers['totalUsers'];
 
-// Count total jobssssss
+// Count total job
 $query = "SELECT COUNT(*) as totalJobs FROM jobs";
 $result = mysqli_query($conn, $query);
 $row = mysqli_fetch_assoc($result);
