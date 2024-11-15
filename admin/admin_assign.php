@@ -25,7 +25,7 @@ $user_result = mysqli_query($conn, $user_query);
 
 // ตรวจสอบการส่งฟอร์ม
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $user_id = mysqli_real_escape_string($conn, $_POST['user_id']);
+    $user_ids = $_POST['user_ids']; // รับเป็น array
     $job_title = mysqli_real_escape_string($conn, $_POST['job_title']);
     $job_description = mysqli_real_escape_string($conn, $_POST['job_description']);
     $due_date = mysqli_real_escape_string($conn, $_POST['due_date']);
@@ -38,29 +38,31 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $upload_directory = '../upload/';
         $file_name = basename($file['name']);
 
+
         // สร้างโฟลเดอร์ถ้าไม่อยู่
         if (!is_dir($upload_directory)) {
             mkdir($upload_directory, 0777, true);
         }
 
-        // ย้ายไฟล์ไปยังโฟลเดอร์ upload
-        if (move_uploaded_file($file['tmp_name'], $upload_directory . $file_name)) {
-            // File upload successful
-        } else {
+        if (!move_uploaded_file($file['tmp_name'], $upload_directory . $file_name)) {
             die('Failed to move uploaded file.');
         }
     }
 
+
     // แทรกข้อมูลลงในฐานข้อมูล
-    $insert_query = "INSERT INTO assignments (admin_id, user_id, job_title, job_description, due_date, due_time, file_path) VALUES (?, ?, ?, ?, ?, ?, ?)";
-    $stmt = $conn->prepare($insert_query);
-    $stmt->bind_param("iisssss", $userid, $user_id, $job_title, $job_description, $due_date, $due_time, $file_name);
-    if ($stmt->execute()) {
-        header("Location: ./admin_view_assignments.php");
-        exit();
-    } else {
-        die('Error: ' . $stmt->error);
+    foreach ($user_ids as $user_id) {
+        $user_id = mysqli_real_escape_string($conn, $user_id);
+        $insert_query = "INSERT INTO assignments (admin_id, user_id, job_title, job_description, due_date, due_time, file_path) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        $stmt = $conn->prepare($insert_query);
+        $stmt->bind_param("iisssss", $userid, $user_id, $job_title, $job_description, $due_date, $due_time, $file_name);
+        if (!$stmt->execute()) {
+            die('Error: ' . $stmt->error);
+        }
     }
+
+    header("Location: ./admin_view_assignments.php");
+    exit();
 }
 
 // ดึงข้อมูลงานที่เคยสั่งทั้งหมด
@@ -73,6 +75,7 @@ $assignments_result = $stmt->get_result();
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -88,6 +91,7 @@ $assignments_result = $stmt->get_result();
             margin: 0;
             font-family: Arial, Helvetica, sans-serif;
         }
+
         .container {
             margin-top: 20px;
             overflow-x: auto;
@@ -98,6 +102,7 @@ $assignments_result = $stmt->get_result();
             padding: 16px;
             margin-left: 0;
         }
+
         .form-container {
             display: flex;
             align-items: center;
@@ -114,6 +119,7 @@ $assignments_result = $stmt->get_result();
             border-radius: 10px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
+
         .form-control {
             background-color: transparent;
             border: none;
@@ -122,18 +128,22 @@ $assignments_result = $stmt->get_result();
             color: #000;
             font-size: 16px;
         }
+
         .form-control:focus {
             border-bottom: 2px solid #727272;
             outline: none;
             box-shadow: none;
         }
+
         .form-control option {
             background-color: transparent;
             color: #000;
         }
+
         .form-control option:hover {
             background-color: rgba(0, 0, 0, 0.1);
         }
+
         .btn {
             font-size: 18px;
             padding: 10px 20px;
@@ -142,12 +152,80 @@ $assignments_result = $stmt->get_result();
             background-color: #1dc02b;
             color: #fff;
         }
+
         .btn:hover {
             background: #0a840a;
             color: #fff;
         }
+
+        /* ปุ่มพื้นฐาน */
+        .btn-worker {
+            background-color: #28a745;
+            /* สีเขียวสด */
+            border: 2px solid #218838;
+            /* สีขอบเข้ม */
+            color: #fff;
+            /* สีตัวอักษร */
+            font-weight: bold;
+            /* ตัวอักษรหนา */
+            padding: 10px 20px;
+            /* ขยายพื้นที่ในปุ่ม */
+            border-radius: 8px;
+            /* มุมโค้งมน */
+            cursor: pointer;
+            /* เปลี่ยนเคอร์เซอร์เป็นรูปมือ */
+            transition: all 0.3s ease;
+            /* เพิ่มเอฟเฟกต์ */
+        }
+
+        /* เมื่อเอาเมาส์วางบนปุ่ม */
+        .btn-worker:hover {
+            background-color: #218838;
+            /* สีพื้นหลังเข้มขึ้น */
+            border-color: #1e7e34;
+            /* สีขอบเข้มขึ้น */
+            transform: scale(1.05);
+            /* ขยายปุ่มเล็กน้อย */
+        }
+
+        /* เมื่อกดปุ่ม */
+        .btn-worker:active {
+            background-color: #1e7e34;
+            /* สีพื้นหลังเข้มที่สุด */
+            border-color: #19692c;
+            /* สีขอบเข้มขึ้น */
+            transform: scale(0.95);
+            /* ลดขนาดเล็กน้อย */
+        }
+
+        /* ปุ่มขนาดเล็ก */
+        .btn-worker.small {
+            font-size: 14px;
+            padding: 5px 10px;
+        }
+
+        /* ปุ่มขนาดใหญ่ */
+        .btn-worker.large {
+            font-size: 18px;
+            padding: 15px 30px;
+        }
+
+        /* จัดให้อยู่คนละบรรทัด */
+        .mb-3 .form-label,
+        .mb-3 .btn-worker {
+            display: block;
+            width: 25%;
+        }
+
+        /* ปรับข้อความให้ดูมีระยะห่าง */
+        #selected-users {
+            margin-top: 10px;
+            /* เพิ่มระยะห่างระหว่างข้อความ */
+            font-size: 14px;
+        }
     </style>
 </head>
+
 <body>
     <div class="navbar navbar-expand-lg navbar-dark">
         <button class="openbtn" id="menuButton" onclick="toggleNav()">☰</button>
@@ -162,29 +240,64 @@ $assignments_result = $stmt->get_result();
                 <img src="<?php echo $uploadedImage; ?>" alt="Uploaded Image">
             </div>
             <h1><?php echo htmlspecialchars($user['firstname']) . " " . htmlspecialchars($user['lastname']); ?></h1>
-            </div>
-                <a href="admin_page.php"><i class="fa-regular fa-clipboard"></i> แดชบอร์ด</a>
-                <a href="emp.php"><i class="fa-solid fa-users"></i> รายชื่อพนักงานทั้งหมด</a>
-                <a href="view_all_jobs.php"><i class="fa-solid fa-briefcase"></i> งานทั้งหมด</a>
-                <a href="admin_assign.php"><i class="fa-solid fa-tasks"></i> สั่งงาน</a>
-                <a href="admin_view_assignments.php"><i class="fa-solid fa-eye"></i> ดูงานที่สั่งแล้ว</a>
-                <a href="review_assignment.php"><i class="fa-solid fa-check-circle"></i> ตรวจสอบงานที่ตอบกลับ</a>
-                <a href="group_review.php"><i class="fa-solid fa-user-edit"></i>ตรวจสอบงานกลุ่มที่สั่ง</a>
-                <a href="edit_profile_admin.php"><i class="fa-solid fa-user-edit"></i> แก้ไขข้อมูลส่วนตัว</a>
-                <a href="../logout.php"><i class="fa-solid fa-sign-out-alt"></i> ออกจากระบบ</a> 
-            </div>
+        </div>
+        <a href="admin_page.php"><i class="fa-regular fa-clipboard"></i> แดชบอร์ด</a>
+        <a href="emp.php"><i class="fa-solid fa-users"></i> รายชื่อพนักงานทั้งหมด</a>
+        <a href="view_all_jobs.php"><i class="fa-solid fa-briefcase"></i> งานทั้งหมด</a>
+        <a href="admin_assign.php"><i class="fa-solid fa-tasks"></i> สั่งงาน</a>
+        <a href="admin_view_assignments.php"><i class="fa-solid fa-eye"></i> ดูงานที่สั่งแล้ว</a>
+        <a href="review_assignment.php"><i class="fa-solid fa-check-circle"></i> ตรวจสอบงานที่ตอบกลับ</a>
+        <a href="group_review.php"><i class="fa-solid fa-user-edit"></i>ตรวจสอบงานกลุ่มที่สั่ง</a>
+        <a href="edit_profile_admin.php"><i class="fa-solid fa-user-edit"></i> แก้ไขข้อมูลส่วนตัว</a>
+        <a href="../logout.php"><i class="fa-solid fa-sign-out-alt"></i> ออกจากระบบ</a>
+    </div>
     <div id="main">
         <div class="form-container">
             <div class="form-box">
                 <form action="admin_assign.php" method="POST" enctype="multipart/form-data">
+                    <!-- เลือกผู้ใช้งาน -->
                     <div class="mb-3">
-                        <label for="user_id" class="form-label">เลือกผู้ใช้งาน</label>
-                        <select class="form-control" id="user_id" name="user_id" required>
-                            <?php while ($user = mysqli_fetch_assoc($user_result)) { ?>
-                                <option value="<?php echo $user['id']; ?>"><?php echo htmlspecialchars($user['firstname']) . ' ' . htmlspecialchars($user['lastname']); ?></option>
-                            <?php } ?>
-                        </select>
+                        <label for="user_ids" class="form-label">เลือกผู้ใช้งาน</label>
+                        <button type="button" class="btn btn-worker small" data-bs-toggle="modal" data-bs-target="#userModal">
+                            เลือกพนักงาน
+                        </button>
+                        <div id="selected-users" class="mt-2 text-muted">ยังไม่ได้เลือกผู้ใช้งาน</div>
                     </div>
+
+                    <!-- Modal สำหรับเลือกผู้ใช้งาน -->
+                    <div class="modal fade" id="userModal" tabindex="-1" aria-labelledby="userModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="userModalLabel">เลือกผู้ใช้งาน</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="form-check">
+                                        <?php while ($user = mysqli_fetch_assoc($user_result)) { ?>
+                                            <div>
+                                                <input type="checkbox" class="form-check-input user-checkbox"
+                                                    id="user_<?php echo $user['id']; ?>"
+                                                    value="<?php echo $user['id']; ?>">
+                                                <label class="form-check-label" for="user_<?php echo $user['id']; ?>">
+                                                    <?php echo htmlspecialchars($user['firstname']) . ' ' . htmlspecialchars($user['lastname']); ?>
+                                                </label>
+                                            </div>
+                                        <?php } ?>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ปิด</button>
+                                    <button type="button" class="btn btn-primary" id="save-users-btn">บันทึก</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Hidden Input สำหรับเก็บค่าผู้ใช้งานที่เลือก -->
+                    <input type="hidden" id="user_ids" name="user_ids">
+
+                    <!-- ฟิลด์อื่น ๆ -->
                     <div class="mb-3">
                         <label for="job_title" class="form-label">ชื่องาน</label>
                         <input type="text" class="form-control" id="job_title" name="job_title" required>
@@ -205,14 +318,50 @@ $assignments_result = $stmt->get_result();
                         <label for="file" class="form-label">ไฟล์แนบ (เฉพาะ PDF)</label>
                         <input type="file" class="form-control" id="file" name="file" accept=".pdf">
                     </div>
-                    <button type="submit" class="btn">สั่งงาน</button>
+                    <button type="submit" class="btn btn-primary">สั่งงาน</button>
+                    <a href="group_assign.php" class="btn btn-secondary">สั่งงานกลุ่ม</a>
                 </form>
-                <a href="group_assign.php" class="btn btn-primary">สั่งงานกลุ่ม</a>
             </div>
-        </div>
         </div>
     </div>
 
+    <!-- JavaScript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const saveUsersBtn = document.getElementById('save-users-btn');
+            const selectedUsersContainer = document.getElementById('selected-users');
+            const userCheckboxes = document.querySelectorAll('.user-checkbox');
+            const hiddenInput = document.getElementById('user_ids');
+
+            saveUsersBtn.addEventListener('click', function() {
+                const selectedUsers = [];
+                const selectedUserNames = [];
+
+                // เก็บค่าจาก checkbox ที่ถูกเลือก
+                userCheckboxes.forEach(checkbox => {
+                    if (checkbox.checked) {
+                        selectedUsers.push(checkbox.value);
+                        selectedUserNames.push(checkbox.nextElementSibling.textContent);
+                    }
+                });
+
+                // แสดงรายชื่อที่เลือก
+                selectedUsersContainer.innerHTML = selectedUserNames.length ?
+                    `<strong>เลือก:</strong> ${selectedUserNames.join(', ')}` :
+                    '<strong>ยังไม่ได้เลือกผู้ใช้งาน</strong>';
+
+
+                // บันทึกค่าใน hidden input
+                hiddenInput.value = JSON.stringify(selectedUsers);
+
+                // ปิด Modal
+                const userModal = bootstrap.Modal.getInstance(document.getElementById('userModal'));
+                userModal.hide();
+            });
+        });
+    </script>
+
     <script src="../js/sidebar.js"></script>
 </body>
+
 </html>
