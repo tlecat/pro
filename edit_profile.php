@@ -2,7 +2,7 @@
 session_start();
 include('./connection.php');
 
-$userid = $_SESSION['userid'];
+$user_id = $_SESSION['user_id'];
 $userlevel = $_SESSION['userlevel'];
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
@@ -10,7 +10,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $nametitle = mysqli_real_escape_string($conn, trim($_POST['nametitle']));
     $firstname = mysqli_real_escape_string($conn, trim($_POST['firstname']));
     $lastname = mysqli_real_escape_string($conn, trim($_POST['lastname']));
-    $position = mysqli_real_escape_string($conn, trim($_POST['position']));
     $phone = mysqli_real_escape_string($conn, trim($_POST['phone']));
     $email = mysqli_real_escape_string($conn, trim($_POST['email']));
 
@@ -34,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             exit();
         }
     } else {
-        $query = "UPDATE mable SET nametitle='$nametitle', firstname='$firstname', lastname='$lastname', position='$position', phone='$phone', email='$email' WHERE id='$userid'";
+        $query = "UPDATE mable SET nametitle='$nametitle', firstname='$firstname', lastname='$lastname', phone='$phone', email='$email' WHERE id='$user_id'";
     }
 
     // Execute update query
